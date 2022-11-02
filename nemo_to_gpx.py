@@ -22,7 +22,8 @@ def datetime_to_api_str(date: datetime):
 def load_api_param(param_file_path: str):
     """
 
-    This function loads the parameter file "param.json" which contains the id and the password needed for the API request.
+    This function loads the parameter file "param.json" which contains the id and the password needed for the API
+    request.
 
     :param param_file_path: parameter file relative path (json)
     :return: id and password to be used for the API request
