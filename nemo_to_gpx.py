@@ -7,10 +7,10 @@ import json
 def datetime_to_api_str(date: datetime):
     """
 
-    This function writes a date from the datetime format to the str format used in CLS's API.
+    This function writes a date from the datetime format to the str format used in CLS API.
 
     :param date: date at the datetime format
-    :return: date at the string format used in CLS's API
+    :return: date at the string format used in CLS API
     """
     # Format should be: '2022-10-13_11:02:37.380000000'
     out_date_str = f'{date.year:04d}-{date.month:02d}-{date.day:02d}_' \
@@ -36,7 +36,7 @@ def load_api_param(param_file_path: str):
 def nemo_to_gpx(start_date: datetime, end_date: datetime, file_name: str):
     """
 
-    This function creates a gpx file with all the positions of the NEMO beacon in a given time windows.
+    This function creates a gpx file with all the positions of the NEMO beacon in a given time window.
 
     :param start_date: start date at the datetime format
     :param end_date: end date at the datetime format
@@ -76,7 +76,7 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, file_name: str):
         # Create points
         for it_response in data['data']:
             this_date = datetime.strptime(it_response['locDate'], "%Y-%m-%d_%H:%M:%S")
-            if start_date <= this_date <= end_date:
+            if start_date <= this_date <= end_date:  # Keep only points in the investigated time window
                 gpx_segment.points.append(
                     gpx.GPXTrackPoint(longitude=it_response['loc'][0],
                                       latitude=it_response['loc'][1],
