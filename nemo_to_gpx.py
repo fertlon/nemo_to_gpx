@@ -82,8 +82,18 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, file_name: str):
                                       latitude=it_response['loc'][1],
                                       elevation=0,
                                       time=this_date,
-                                      comment=f"SOG: {it_response['speed']}, COG: {it_response['heading']}"))
-        # Define gpx output file
-        with open(file_name, 'w') as f:
-            f.write(gpx_data.to_xml())
-        print(f'Created GPX file {file_name}')
+                                      name=f"Date: {this_date}, SOG: {it_response['speed']}, COG: {it_response['heading']}"))
+
+                # Add a waypoint to the last waypoint
+                if it_response == data['data'][-1]:
+                    last_wp = gpx.GPXWaypoint(longitude=it_response['loc'][0],
+                                              latitude=it_response['loc'][1],
+                                              elevation=0,
+                                              time=this_date,
+                                              name=f"Date: {this_date}, SOG: {it_response['speed']}, COG: {it_response['heading']}")
+                    gpx_data.waypoints.append(last_wp)
+
+                    # Define gpx output file
+                    with open(file_name, 'w') as f:
+                        f.write(gpx_data.to_xml())
+                    print(f'Created GPX file {file_name}')
