@@ -82,7 +82,7 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, file_name: str):
                                       latitude=it_response['loc'][1],
                                       elevation=0,
                                       time=this_date,
-                                      name=f"Date: {this_date}, SOG: {it_response['speed']}, COG: {it_response['heading']}"))
+                                      name=f"Date: {this_date} UTC, SOG: {it_response['speed']}, COG: {it_response['heading']}"))
 
                 # Add a waypoint to the last waypoint
                 if it_response == data['data'][-1]:
@@ -90,7 +90,7 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, file_name: str):
                                               latitude=it_response['loc'][1],
                                               elevation=0,
                                               time=this_date,
-                                              name=f"Date: {this_date}, SOG: {it_response['speed']}, COG: {it_response['heading']}")
+                                              name=f"Date: {this_date} UTC, SOG: {it_response['speed']}, COG: {it_response['heading']}")
                     gpx_data.waypoints.append(last_wp)
 
                     # Define gpx output file
