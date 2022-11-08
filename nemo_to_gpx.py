@@ -33,7 +33,7 @@ def load_api_param(param_file_path: str):
         return param_data['id'], param_data['pwd']
 
 
-def nemo_to_gpx(start_date: datetime, end_date: datetime, file_name: str):
+def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_seconds: int = 0, file_name: str = 'output.gpx'):
     """
 
     This function creates a gpx file with all the positions of the NEMO beacon in a given time window.
@@ -41,6 +41,7 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, file_name: str):
     :param start_date: start date at the datetime format
     :param end_date: end date at the datetime format
     :param file_name: output relative file name (.gpx)
+    :param delta_time_seconds : step in seconds between 2 points in the GPX file
     :return: none
     """
     # Convert the dates to the API date format
@@ -64,7 +65,7 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, file_name: str):
 
     if data['data']:
         n_points = len(data['data'])
-        print(f'Number of points: {n_points}')
+        print(f'Number of points from the API: {n_points}')
         # Creating a new gpx file
         gpx_data = gpx.GPX()
         # Create first track in our GPX
@@ -74,26 +75,33 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, file_name: str):
         gpx_segment = gpx.GPXTrackSegment()
         gpx_track.segments.append(gpx_segment)
         # Create points
+        this_last_date = datetime.strptime(data['data'][0]['locDate'], "%Y-%m-%d_%H:%M:%S")
+        n_points_out = 0
         for it_response in data['data']:
             this_date = datetime.strptime(it_response['locDate'], "%Y-%m-%d_%H:%M:%S")
-            if start_date <= this_date <= end_date:  # Keep only points in the investigated time window
-                gpx_segment.points.append(
-                    gpx.GPXTrackPoint(longitude=it_response['loc'][0],
-                                      latitude=it_response['loc'][1],
-                                      elevation=0,
-                                      time=this_date,
-                                      name=f"Date: {this_date} UTC, SOG: {it_response['speed']}, COG: {it_response['heading']}"))
+            if (this_date - this_last_date).total_seconds() / 60 > delta_time_seconds:
+                if start_date <= this_date <= end_date:  # Keep only points in the investigated time window
+                    gpx_segment.points.append(
+                        gpx.GPXTrackPoint(longitude=it_response['loc'][0],
+                                          latitude=it_response['loc'][1],
+                                          elevation=0,
+                                          time=this_date,
+                                          name=f"Date: {this_date} UTC, SOG: {it_response['speed']}, "
+                                               f"COG: {it_response['heading']}"))
+                    this_last_date = this_date
+                    n_points_out += 1
+            # Add a waypoint to the last waypoint
+            if it_response == data['data'][-1]:
+                last_wp = gpx.GPXWaypoint(longitude=it_response['loc'][0],
+                                          latitude=it_response['loc'][1],
+                                          elevation=0,
+                                          time=this_date,
+                                          name=f"Date: {this_date} UTC, SOG: {it_response['speed']}, "
+                                               f"COG: {it_response['heading']}")
+                gpx_data.waypoints.append(last_wp)
 
-                # Add a waypoint to the last waypoint
-                if it_response == data['data'][-1]:
-                    last_wp = gpx.GPXWaypoint(longitude=it_response['loc'][0],
-                                              latitude=it_response['loc'][1],
-                                              elevation=0,
-                                              time=this_date,
-                                              name=f"Date: {this_date} UTC, SOG: {it_response['speed']}, COG: {it_response['heading']}")
-                    gpx_data.waypoints.append(last_wp)
-
-                    # Define gpx output file
-                    with open(file_name, 'w') as f:
-                        f.write(gpx_data.to_xml())
-                    print(f'Created GPX file {file_name}')
+        print(f'Number of points in the GPX file: {n_points_out}')
+        # Define gpx output file
+        with open(file_name, 'w') as f:
+            f.write(gpx_data.to_xml())
+        print(f'Created GPX file {file_name}')
