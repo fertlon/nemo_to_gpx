@@ -33,7 +33,7 @@ def load_api_param(param_file_path: str):
         return param_data['id'], param_data['pwd']
 
 
-def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_seconds: int = 0, file_name: str = 'output.gpx'):
+def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: int = 0, file_name: str = 'output.gpx'):
     """
 
     This function creates a gpx file with all the positions of the NEMO beacon in a given time window.
@@ -41,7 +41,7 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_seconds: in
     :param start_date: start date at the datetime format
     :param end_date: end date at the datetime format
     :param file_name: output relative file name (.gpx)
-    :param delta_time_seconds : step in seconds between 2 points in the GPX file
+    :param delta_time_minutes : step in minutes between 2 points in the GPX file
     :return: none
     """
     # Convert the dates to the API date format
@@ -79,7 +79,7 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_seconds: in
         n_points_out = 0
         for it_response in data['data']:
             this_date = datetime.strptime(it_response['locDate'], "%Y-%m-%d_%H:%M:%S")
-            if (this_date - this_last_date).total_seconds() / 60 > delta_time_seconds:
+            if (this_date - this_last_date).total_seconds() / 60 > delta_time_minutes:
                 if start_date <= this_date <= end_date:  # Keep only points in the investigated time window
                     gpx_segment.points.append(
                         gpx.GPXTrackPoint(longitude=it_response['loc'][0],
