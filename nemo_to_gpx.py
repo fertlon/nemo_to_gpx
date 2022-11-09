@@ -92,6 +92,7 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
                     n_points_out += 1
             # Add a waypoint to the last waypoint
             if it_response == data['data'][-1]:
+                print(f'\nLast known position: {this_date}')
                 last_wp = gpx.GPXWaypoint(longitude=it_response['loc'][0],
                                           latitude=it_response['loc'][1],
                                           elevation=0,
@@ -100,8 +101,7 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
                                                f"COG: {it_response['heading']}")
                 gpx_data.waypoints.append(last_wp)
 
-        print(f'Number of points in the GPX file: {n_points_out}')
         # Define gpx output file
         with open(file_name, 'w') as f:
             f.write(gpx_data.to_xml())
-        print(f'Created GPX file {file_name}')
+        print(f'Created GPX file "{file_name}" with {n_points_out} points')
