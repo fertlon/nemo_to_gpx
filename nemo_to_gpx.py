@@ -1,5 +1,6 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
+import pytz
 from gpxpy import gpx
 import json
 from functions_for_cartography import distance_gps
@@ -45,6 +46,10 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
     :param delta_time_minutes : step in minutes between 2 points in the GPX file
     :return: none
     """
+
+    # Paris datetime
+    paris_tz = pytz.timezone("Europe/Paris")
+
     # Convert the dates to the API date format
     start_date_str = datetime_to_api_str(start_date)
     end_date_str = datetime_to_api_str(end_date)
@@ -89,7 +94,9 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
         long_a = 0
         for it_response in data['data']:
             this_date = datetime.strptime(it_response['locDate'], "%Y-%m-%d_%H:%M:%S")
-            if (this_date - this_last_date).total_seconds() / 60 > delta_time_minutes:
+            if ((this_date - this_last_date).total_seconds() / 60 > delta_time_minutes) or \
+                    it_response == data['data'][-1]:
+                # Keep only points that respect the input deta time and the last point
                 if start_date <= this_date <= end_date:  # Keep only points in the investigated time window
                     gpx_segment.points.append(
                         gpx.GPXTrackPoint(longitude=it_response['loc'][0],
@@ -108,13 +115,15 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
 
             # Add a waypoint to the last waypoint
             if it_response == data['data'][-1]:
-                print(f'\nLast known position: {this_date}')
+                # Write the date in Paris time for the last waypoint that will be displayed on the map
+                this_date_paris_tz_str = this_date.replace(tzinfo=timezone.utc).astimezone(paris_tz).strftime(
+                    "%d-%m-%Y %H:%M")
+                print(f'\nLast known position: {this_date} UTC')
                 last_wp = gpx.GPXWaypoint(longitude=it_response['loc'][0],
                                           latitude=it_response['loc'][1],
                                           elevation=0,
                                           time=this_date,
-                                          name=f"Date: {this_date} UTC, SOG: {it_response['speed']}, "
-                                               f"COG: {it_response['heading']}")
+                                          name=f"Date: {this_date_paris_tz_str}, {it_response['speed']} kt")
                 gpx_data.waypoints.append(last_wp)
             # Compute total distance and speed
             long_b = it_response['loc'][0]
