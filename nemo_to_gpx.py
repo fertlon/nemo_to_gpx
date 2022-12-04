@@ -94,6 +94,8 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
         long_a = 0
         for it_response in data['data']:
             this_date = datetime.strptime(it_response['locDate'], "%Y-%m-%d_%H:%M:%S")
+            this_sog = it_response['speed']
+            this_cog = it_response['heading']
             if ((this_date - this_last_date).total_seconds() / 60 > delta_time_minutes) or \
                     it_response == data['data'][-1]:
                 # Keep only points that respect the input deta time and the last point
@@ -103,8 +105,8 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
                                           latitude=it_response['loc'][1],
                                           elevation=0,
                                           time=this_date,
-                                          name=f"Date: {this_date} UTC, SOG: {it_response['speed']}, "
-                                               f"COG: {it_response['heading']}"))
+                                          name=f"Date: {this_date} UTC, SOG: {this_sog}, "
+                                               f"COG: {this_cog}"))
                     this_last_date = this_date
                     n_points_out += 1
 
@@ -119,11 +121,13 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
                 this_date_paris_tz_str = this_date.replace(tzinfo=timezone.utc).astimezone(paris_tz).strftime(
                     "%d-%m-%Y %H:%M")
                 print(f'\nLast known position: {this_date} UTC')
+                print(f'Last known COG: {this_cog}°')
+                print(f'Last known SOG: {this_sog} kt')
                 last_wp = gpx.GPXWaypoint(longitude=it_response['loc'][0],
                                           latitude=it_response['loc'][1],
                                           elevation=0,
                                           time=this_date,
-                                          name=f"Date: {this_date_paris_tz_str}, {it_response['speed']} kt")
+                                          name=f"Date: {this_date_paris_tz_str}, {this_sog} kt")
                 gpx_data.waypoints.append(last_wp)
             # Compute total distance and speed
             long_b = it_response['loc'][0]
@@ -139,7 +143,7 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
         # Define gpx output file
         with open(file_name, 'w') as f:
             f.write(gpx_data.to_xml())
-        print(f'Created GPX file "{file_name}" with {n_points_out} points')
+        print(f'\nCreated GPX file "{file_name}" with {n_points_out} points')
 
         # Print average speed in kts (*1,945 => Pourquoi ce coef et non pas 1,852 ? sur fishweb-nemo, la vitesse est
         # en noeuds, alors que la vitesse renvoyée est dans une unité inconnue, donc coef trouvé empiriquement... )
@@ -149,4 +153,4 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
 
         # Print total distance in nautical miles
         format_total_dist = "{:.1f}".format(total_dist)
-        print(f'Total distance = {format_total_dist} nmi')
+        print(f'Total distance = {format_total_dist} nm')
