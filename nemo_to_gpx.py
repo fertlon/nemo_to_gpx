@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 import pytz
 from gpxpy import gpx
 import json
-from functions_for_cartography import distance_gps_harvesine
 
 
 def datetime_to_api_str(date: datetime):
@@ -88,9 +87,6 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
         speed_average = 0
         # Initialize the number of points used to average the data
         n_points_average = 0
-        total_distance_harv = 0
-        lat_a = None
-        long_a = None
         for it_response in data['data']:
             this_date = datetime.strptime(it_response['locDate'], "%Y-%m-%d_%H:%M:%S")
             this_sog = it_response['speed']
@@ -108,15 +104,6 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
                                                f"COG: {this_cog}"))
                     this_last_date = this_date
                     n_points_out += 1
-                    # Compute total distance
-                    long_b = it_response['loc'][0]
-                    lat_b = it_response['loc'][1]
-                    if n_points_out > 1:
-                        total_distance_harv += distance_gps_harvesine(lat_a, long_a, lat_b, long_b) / 1852
-                        # print(f"{n_points_out} : {total_distance_harv}\n")
-                    long_a = it_response['loc'][0]
-                    lat_a = it_response['loc'][1]
-
                     # Add speed to average if different from 0
                     if float(it_response['speed']) != 0:
                         speed_average += float(it_response['speed'])
@@ -150,6 +137,4 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
         # Print total distance in nautical miles
         total_dist_nm = gpx_track.length_2d() / 1852
         format_total_dist = "{:.0f}".format(total_dist_nm)
-        format_total_dist_harv = "{:.0f}".format(total_distance_harv)
         print(f'Total distance from gpxpy function = {format_total_dist} nm')
-        print(f'Total distance from Harvesine formula = {format_total_dist_harv} nm')
