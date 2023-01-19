@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import pytz
 from gpxpy import gpx
 import json
-from functions_for_cartography import distance_gps
+from functions_for_cartography import distance_gps_harvesine
 
 
 def datetime_to_api_str(date: datetime):
@@ -88,10 +88,9 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
         speed_average = 0
         # Initialize the number of points used to average the data
         n_points_average = 0
-        n_index = 0
-        total_dist = 0
-        lat_a = 0
-        long_a = 0
+        total_distance_harv = 0
+        lat_a = None
+        long_a = None
         for it_response in data['data']:
             this_date = datetime.strptime(it_response['locDate'], "%Y-%m-%d_%H:%M:%S")
             this_sog = it_response['speed']
@@ -109,12 +108,19 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
                                                f"COG: {this_cog}"))
                     this_last_date = this_date
                     n_points_out += 1
+                    # Compute total distance
+                    long_b = it_response['loc'][0]
+                    lat_b = it_response['loc'][1]
+                    if n_points_out > 1:
+                        total_distance_harv += distance_gps_harvesine(lat_a, long_a, lat_b, long_b) / 1852
+                        # print(f"{n_points_out} : {total_distance_harv}\n")
+                    long_a = it_response['loc'][0]
+                    lat_a = it_response['loc'][1]
 
                     # Add speed to average if different from 0
                     if float(it_response['speed']) != 0:
                         speed_average += float(it_response['speed'])
                         n_points_average += 1
-
             # Add a waypoint to the last waypoint
             if it_response == data['data'][-1]:
                 # Write the date in Paris time for the last waypoint that will be displayed on the map
@@ -129,17 +135,7 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
                                           time=this_date,
                                           name=f"Date: {this_date_paris_tz_str}, {this_sog} kt")
                 gpx_data.waypoints.append(last_wp)
-            # Compute total distance and speed
-            long_b = it_response['loc'][0]
-            lat_b = it_response['loc'][1]
-            # Compute distance between two last points after first point
-            if n_index > 2 and float(it_response['speed']) != 0 and not (long_a == long_b and lat_a == lat_b):
-                dist = distance_gps(lat_a, long_a, lat_b, long_b) / 1852
-                total_dist += dist
 
-            n_index += 1
-            long_a = it_response['loc'][0]
-            lat_a = it_response['loc'][1]
         # Define gpx output file
         with open(file_name, 'w') as f:
             f.write(gpx_data.to_xml())
@@ -148,9 +144,12 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
         # Print average speed in kts (*1,945 => Pourquoi ce coef et non pas 1,852 ? sur fishweb-nemo, la vitesse est
         # en noeuds, alors que la vitesse renvoyée est dans une unité inconnue, donc coef trouvé empiriquement... )
         speed_average = (speed_average / n_points_average) * 1.945
-        format_speed = "{:.2f}".format(speed_average)
+        format_speed = "{:.1f}".format(speed_average)
         print(f'Average speed = {format_speed} kts')
 
         # Print total distance in nautical miles
-        format_total_dist = "{:.1f}".format(total_dist)
-        print(f'Total distance = {format_total_dist} nm')
+        total_dist_nm = gpx_track.length_2d() / 1852
+        format_total_dist = "{:.0f}".format(total_dist_nm)
+        format_total_dist_harv = "{:.0f}".format(total_distance_harv)
+        print(f'Total distance from gpxpy function = {format_total_dist} nm')
+        print(f'Total distance from Harvesine formula = {format_total_dist_harv} nm')
