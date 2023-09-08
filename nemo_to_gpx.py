@@ -95,8 +95,9 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
                     it_response == data['data'][-1]:
                 # Keep only points that respect the input deta time and the last point
                 if start_date <= this_date <= end_date:  # Keep only points in the investigated time window
+                    longitude_mod_360=(it_response['loc'][0]) % 360
                     gpx_segment.points.append(
-                        gpx.GPXTrackPoint(longitude=it_response['loc'][0],
+                        gpx.GPXTrackPoint(longitude=longitude_mod_360,
                                           latitude=it_response['loc'][1],
                                           elevation=0,
                                           time=this_date,
@@ -137,4 +138,4 @@ def nemo_to_gpx(start_date: datetime, end_date: datetime, delta_time_minutes: in
         # Print total distance in nautical miles
         total_dist_nm = gpx_track.length_2d() / 1852
         format_total_dist = "{:.0f}".format(total_dist_nm)
-        print(f'Total distance from gpxpy function = {format_total_dist} nm')
+        print(f'Total distance = {format_total_dist} nm')
