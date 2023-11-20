@@ -6,7 +6,7 @@ Get the track of a CLS NEMO beacon and convert it to a GPX file.
 
 ## Pre-requisites
 
-1. Import the libraries 'requests' and 'gpxpy'
+1. Import the libraries 'requests', 'gpxpy' and 'pytz'
 1. Launch 'git update-index --skip-worktree param.json'
 1. Modify the file 'param.json' with the wanted id and password
 
