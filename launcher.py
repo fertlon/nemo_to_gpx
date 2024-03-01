@@ -8,7 +8,7 @@ end_date = datetime.now(timezone.utc)
 # Define the output gpx file name
 file_name = "heremoana_track.gpx"
 
-# Define the time in seconds between 2 successive waypoints
+# Define the time in minutes between 2 successive waypoints
 delta_time_minutes = 15
 
 # Generate the gpx file
