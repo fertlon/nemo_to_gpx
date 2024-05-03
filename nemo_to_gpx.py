@@ -48,8 +48,8 @@ def nemo_to_gpx(
 
     :param start_date: start date at the datetime format
     :param end_date: end date at the datetime format
-    :param file_name: output relative file name (.gpx)
     :param delta_time_minutes : step in minutes between 2 points in the GPX file
+    :param file_name: output relative file name (.gpx)
     :return: none
     """
 
@@ -67,14 +67,9 @@ def nemo_to_gpx(
     api_id, api_pwd = load_api_param(param_file)
 
     # Launch the API request
-    print("Launching API request...")
-    response = requests.get(
-        "https://fishweb-nemo.cls.fr/uda/resources/positions?"
-        + f"application=umv&login={api_id}&password={api_pwd}&orderBy=locDate&fields=heading"
-        + "%2Cspeed%2CmobileId%2Cloc%2ClocDate%2Cnature%2Csource%2CmobileName%2CmobileMmsi%"
-        + "2CqualityOverall%2CmobileCountryCode%2CmobileType%2CradarEchoId%2CmobileImo%2CmobileCallSign&"
-        + f"from={start_date_str}&to={end_date_str}&dateType=creation&mode=default"
-    )
+    request_str=f"https://fishweb-nemo.cls.fr/uda/resources/positions?application=umv&login={api_id}&password={api_pwd}&orderBy=locDate&fields=heading%2Cspeed%2CmobileId%2Cloc%2ClocDate%2Cnature%2Csource%2CmobileName%2CmobileMmsi%2CqualityOverall%2CmobileCountryCode%2CmobileType%2CradarEchoId%2CmobileImo%2CmobileCallSign&from={start_date_str}&to={end_date_str}&dateType=creation&mode=default"
+    print(f"Launching following API request:\n{request_str}")
+    response = requests.get(request_str)
     print("API request downloaded !")
     data = response.json()
     # Create GPX file

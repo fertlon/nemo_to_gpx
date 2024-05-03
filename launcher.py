@@ -9,7 +9,7 @@ end_date = datetime.now(timezone.utc)
 file_name = "heremoana_track.gpx"
 
 # Define the time in minutes between 2 successive waypoints
-delta_time_minutes = 15
+delta_time_minutes = 10
 
 # Generate the gpx file
 nemo_to_gpx(start_date, end_date, delta_time_minutes, file_name)
