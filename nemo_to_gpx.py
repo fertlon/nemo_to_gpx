@@ -1,7 +1,7 @@
 import requests
 from datetime import datetime, timezone
 import pytz
-from gpxpy import gpx
+from gpxpy import gpx, parse
 import json
 
 
@@ -67,10 +67,10 @@ def nemo_to_gpx(
     api_id, api_pwd = load_api_param(param_file)
 
     # Launch the API request
-    request_str=f"https://fishweb-nemo.cls.fr/uda/resources/positions?application=umv&login={api_id}&password={api_pwd}&orderBy=locDate&fields=heading%2Cspeed%2CmobileId%2Cloc%2ClocDate%2Cnature%2Csource%2CmobileName%2CmobileMmsi%2CqualityOverall%2CmobileCountryCode%2CmobileType%2CradarEchoId%2CmobileImo%2CmobileCallSign&from={start_date_str}&to={end_date_str}&dateType=creation&mode=default"
-    print(f"Launching following API request:\n{request_str}")
+    request_str = f"https://fishweb-nemo.cls.fr/uda/resources/positions?application=umv&login={api_id}&password={api_pwd}&orderBy=locDate&fields=heading%2Cspeed%2CmobileId%2Cloc%2ClocDate%2Cnature%2Csource%2CmobileName%2CmobileMmsi%2CqualityOverall%2CmobileCountryCode%2CmobileType%2CradarEchoId%2CmobileImo%2CmobileCallSign&from={start_date_str}&to={end_date_str}&dateType=creation&mode=default"
+    print(f"\nLaunching following API request:\n{request_str}")
     response = requests.get(request_str)
-    print("API request downloaded !")
+    print("\nAPI request downloaded !")
     data = response.json()
     # Create GPX file
     if data["data"]:
@@ -167,3 +167,54 @@ def nemo_to_gpx(
         total_dist_nm = gpx_track.length_2d() / 1852
         format_total_dist = "{:.0f}".format(total_dist_nm)
         print(f"Total distance = {format_total_dist} nm")
+
+
+def remove_middle_east_false_points(file_name_input: str, file_name_postpro: str):
+    """
+
+    This function removes some erroneous points in Middle-East, that are due to a problem with the beacon
+
+    :param file_name_input: input file name in str
+    :param file_name_postpro: output file name in str
+    :return: none
+    """
+    # Load input gpx file
+    gpx_file = open(file_name_input, "r")
+    gpx_old = parse(gpx_file)
+    # Create a new empty gpx file
+    gpx_new = gpx.GPX()
+    # Create first track in our GPX
+    gpx_track = gpx.GPXTrack()
+    gpx_new.tracks.append(gpx_track)
+    # Create first segment in our GPX track
+    gpx_segment = gpx.GPXTrackSegment()
+    gpx_track.segments.append(gpx_segment)
+    # Add a waypoint to the last waypoint
+    gpx_new.waypoints.append(gpx_old.waypoints[0])
+    # Keep only non-erroneous points
+    n_dis_pts = 0
+    print("\nStart post-processing...")
+    for track in gpx_old.tracks:
+        for segment in track.segments:
+            for point in segment.points:
+                if (abs(point.latitude - 33.81825) < 0.1) & (
+                    abs(point.longitude - 35.4908) < 0.1
+                ):
+                    n_dis_pts += 1
+                elif (abs(point.latitude - 31.6561) < 0.1) & (
+                    abs(point.longitude - 34.53845) < 0.1
+                ):
+                    n_dis_pts += 1
+                else:
+                    gpx_segment.points.append(point)
+
+    print(f"{n_dis_pts} discarded points")
+    # Define output gpx output file
+    with open(file_name_postpro, "w") as f:
+        f.write(gpx_new.to_xml())
+    print(f'Created GPX file "{file_name_postpro}"')
+
+    # Print total distance in nautical miles
+    total_dist_nm = gpx_track.length_2d() / 1852
+    format_total_dist = "{:.0f}".format(total_dist_nm)
+    print(f"Total distance = {format_total_dist} nm")
